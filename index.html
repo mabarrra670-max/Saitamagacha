@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>One Punch Gacha: Whale Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #ffd700; --red: #ff4757; --dark: #0a0a0a; --glass: rgba(0,0,0,0.85); --green: #2ecc71; }
+        body { margin: 0; background: var(--dark); color: #fff; font-family: 'Poppins', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        #videoBg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; filter: brightness(0.2); }
+
+        .header { padding: 15px 20px; background: rgba(0,0,0,0.9); border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .diamond-pill { background: rgba(255,215,0,0.1); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--gold); color: var(--gold); font-weight: 600; }
+
+        .screen { flex: 1; display: none; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; padding-bottom: 100px; background-size: cover; background-position: center; }
+        .screen.active { display: flex; }
+
+        /* BACKGROUNDS */
+        #gacha { background-image: url('https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/bgshop.png'); }
+        #pvp { background-image: url('https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/bguarena.png'); }
+        #profil { background-image: url('https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/Bgprofil.png'); }
+        #shop { background-color: rgba(10,10,10,0.9); }
+
+        /* GACHA */
+        .gacha-viewport { position: relative; width: 220px; height: 300px; margin: 10px 0; perspective: 1000px; }
+        .card-container { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+        .card-container.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; border: 2px solid #444; background-size: cover; background-position: center; }
+        .card-front { background: #111; color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .card-back { transform: rotateY(180deg); border: 2px solid var(--gold); }
+        .gacha-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 100%; }
+        .mini-card { aspect-ratio: 2/3; border-radius: 4px; background-size: cover; background-position: center; border: 1px solid #444; }
+
+        /* SHOP UI */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 10px; }
+        .shop-item { background: var(--glass); border: 1px solid var(--gold); border-radius: 15px; padding: 15px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .shop-item h4 { color: var(--gold); margin: 5px 0; font-family: 'Bebas Neue'; font-size: 1.2rem; }
+        .buy-btn { background: var(--green); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; box-shadow: 0 3px 0 #1b7e43; }
+
+        /* BATTLE & INV */
+        .battle-card { width: 100px; height: 140px; border-radius: 10px; border: 2px solid #fff; background-size: cover; background-position: center; background-color: #000; position: relative; }
+        .hp-bar { height: 8px; background: #222; border-radius: 4px; margin-top: 5px; width: 100%; overflow: hidden; border: 1px solid #000; }
+        .hp-fill { height: 100%; background: var(--green); width: 100%; transition: 0.2s; }
+        .inv-card { position: relative; border-radius: 10px; border: 1px solid var(--gold); overflow: hidden; background-size: cover; aspect-ratio: 2/3; background-position: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .pwr-tag { position: absolute; top: 0; left: 0; background: var(--gold); color: #000; font-size: 0.55rem; padding: 2px 5px; font-weight: bold; border-radius: 0 0 5px 0; }
+        .dup-badge { position: absolute; top: 2px; right: 2px; background: var(--red); color: #fff; font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; font-weight: bold; }
+        .up-btn { position: absolute; bottom: 0; width: 100%; background: rgba(39, 174, 96, 0.9); border: none; color: white; font-size: 0.65rem; padding: 5px 0; cursor: pointer; font-family: 'Bebas Neue'; }
+
+        .nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: rgba(0,0,0,0.95); display: flex; border-top: 1px solid #333; z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 0.6rem; }
+        .nav-item.active { color: var(--gold); }
+        .btn { background: var(--red); color: #fff; border: none; padding: 12px; border-radius: 10px; font-family: 'Bebas Neue'; font-size: 1.1rem; box-shadow: 0 4px 0 #900; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body onclick="playBGM()">
+
+    <video id="videoBg" playsinline loop muted>
+        <source src="https://raw.githubusercontent.com/mabarrra670-max/Sik/2618c2c289f712966754adcf30af376696ccc73f/lv_0_20260101162558.mp4" type="video/mp4">
+    </video>
+
+    <div class="header">
+        <div><span style="font-size:0.6rem; color:#aaa;">VIP LEVEL</span><br><b id="p-name">HERO_PLAYER</b></div>
+        <div class="diamond-pill">💎 <span id="p-dia">0</span></div>
+    </div>
+
+    <div id="gacha" class="screen active">
+        <h3 style="font-family:'Bebas Neue'; margin:0; background:rgba(0,0,0,0.6); padding:5px 15px; border-radius:5px;">HERO SUMMON</h3>
+        <div class="gacha-viewport" id="single-view">
+            <div id="card-box" class="card-container">
+                <div class="card-face card-front">?</div>
+                <div id="card-img" class="card-face card-back"></div>
+            </div>
+        </div>
+        <div id="grid-view" class="gacha-grid" style="display:none;"></div>
+        <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+            <button class="btn" onclick="pull(1)">1x PULL</button>
+            <button class="btn" style="background:#b8860b; box-shadow:0 4px 0 #5e4506;" onclick="pull(10)">10x PULL</button>
+        </div>
+    </div>
+
+    <div id="shop" class="screen">
+        <h3 style="font-family:'Bebas Neue'; margin:0; color:var(--gold);">DIAMOND RECHARGE</h3>
+        <div class="shop-grid">
+            <div class="shop-item">
+                <span>💎 1,000</span>
+                <h4>Rp 10.000</h4>
+                <button class="buy-btn" onclick="buyDia(1000, 10000)">BELI</button>
+            </div>
+            <div class="shop-item">
+                <span>💎 6,000</span>
+                <h4>Rp 50.000</h4>
+                <button class="buy-btn" onclick="buyDia(6000, 50000)">BELI</button>
+            </div>
+            <div class="shop-item">
+                <span>💎 15,000</span>
+                <h4>Rp 100.000</h4>
+                <button class="buy-btn" onclick="buyDia(15000, 100000)">BELI</button>
+            </div>
+            <div class="shop-item">
+                <span>💎 80,000</span>
+                <h4>Rp 500.000</h4>
+                <button class="buy-btn" onclick="buyDia(80000, 500000)">BELI</button>
+            </div>
+            <div class="shop-item" style="grid-column: span 2; border-color: #fff; background: rgba(255,215,0,0.1);">
+                <span>💎 200,000</span>
+                <h4>Rp 1.000.000</h4>
+                <button class="buy-btn" onclick="buyDia(200000, 1000000)">WHALE PACK</button>
+            </div>
+            <div class="shop-item" style="grid-column: span 2; border-color: var(--red); background: rgba(255,71,87,0.1);">
+                <span style="font-size: 1.5rem;">💎 1,500,000</span>
+                <h4 style="font-size: 1.8rem;">Rp 5.000.000</h4>
+                <button class="buy-btn" style="background: var(--red); box-shadow: 0 3px 0 #900;" onclick="buyDia(1500000, 5000000)">GOD OF WHALE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pvp" class="screen">
+        <h3 style="font-family:'Bebas Neue'; background:rgba(0,0,0,0.6); padding:5px 15px;">ARENA</h3>
+        <div id="hero-select-list" style="display:flex; gap:8px; overflow-x:auto; width:100%; padding:10px 0; min-height:110px;"></div>
+        <div style="width:100%; background:rgba(0,0,0,0.85); padding:15px; border-radius:15px; box-sizing:border-box; border:1px solid #444;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="text-align:center;"><div id="p-fighter" class="battle-card"></div><div class="hp-bar"><div id="p-hp" class="hp-fill"></div></div><small id="p-info">Lv.0</small></div>
+                <div style="font-family:'Bebas Neue'; font-size:1.8rem; color:var(--red);">VS</div>
+                <div style="text-align:center;"><div id="e-fighter" class="battle-card"></div><div class="hp-bar"><div id="e-hp" class="hp-fill"></div></div><small id="e-info">Lv.0</small></div>
+            </div>
+        </div>
+        <button id="btn-fight" class="btn" style="margin-top:15px;" onclick="startBattle()" disabled>GAS FIGHT!</button>
+    </div>
+
+    <div id="profil" class="screen">
+        <h3 style="font-family:'Bebas Neue'; background:rgba(0,0,0,0.6); padding:5px 15px;">MY COLLECTION</h3>
+        <div id="inv-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; width:100%;"></div>
+    </div>
+
+    <nav class="nav">
+        <div class="nav-item active" onclick="nav('gacha', this)"><span>🛒</span><span>Gacha</span></div>
+        <div class="nav-item" onclick="nav('shop', this)"><span>💎</span><span>Store</span></div>
+        <div class="nav-item" onclick="nav('pvp', this)"><span>⚔️</span><span>Battle</span></div>
+        <div class="nav-item" onclick="nav('profil', this)"><span>👤</span><span>Heroes</span></div>
+    </nav>
+
+    <script>
+        const heroPool = [
+            { id:1, name:"Saitama God", rate:0.01, pwr:999999, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/saitamagod.png" },
+            { id:2, name:"Cosmic Garou", rate:0.1, pwr:50000, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/cosmicgarou.png" },
+            { id:3, name:"Saitama", rate:0.5, pwr:40000, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/saitama.png" },
+            { id:4, name:"Garou Monster", rate:1.0, pwr:25000, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/garoumonster.png" },
+            { id:5, name:"King", rate:2.0, pwr:88888, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/king.png" },
+            { id:6, name:"Bang", rate:4.0, pwr:15000, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/bang.png" },
+            { id:7, name:"Atomic Samurai", rate:5.0, pwr:14000, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/atomicsamurai.png" },
+            { id:13, name:"Mumen Rider", rate:87.39, pwr:500, img:"https://raw.githubusercontent.com/mabarrra670-max/Gacha/2b743c1c0667b9d0c68148690f832ad239da9d59/card/mumenrider.png" }
+        ];
+
+        let db = JSON.parse(localStorage.getItem('OPG_WHALE_V1')) || { dia:1000, score:0, inv:[], selected:null };
+
+        function playBGM() { const v = document.getElementById('videoBg'); v.muted=false; v.play(); }
+        function save() { localStorage.setItem('OPG_WHALE_V1', JSON.stringify(db)); document.getElementById('p-dia').innerText = db.dia.toLocaleString(); }
+
+        function nav(id, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active'); el.classList.add('active');
+            if(id === 'profil') renderInv();
+            if(id === 'pvp') renderSelect();
+        }
+
+        function buyDia(amt, price) {
+            if(confirm(`Konfirmasi pembelian 💎 ${amt.toLocaleString()} seharga Rp ${price.toLocaleString()}?`)) {
+                db.dia += amt;
+                alert("Pembelian Berhasil!");
+                save();
+            }
+        }
+
+        function pull(times) {
+            if(db.dia < times*100) return alert("Diamond Kurang!");
+            db.dia -= times*100;
+            const single = document.getElementById('single-view');
+            const grid = document.getElementById('grid-view');
+            const box = document.getElementById('card-box');
+            grid.innerHTML = ''; box.classList.remove('is-flipped');
+
+            let results = [];
+            for(let i=0; i<times; i++){
+                let r = Math.random()*100, cur=0, rolled;
+                for(let h of heroPool){ cur+=h.rate; if(r<=cur){rolled=h; break;}}
+                results.push(rolled);
+                let o = db.inv.find(x => x.id === rolled.id);
+                if(o) o.dupes++; else db.inv.push({...rolled, lvl:1, dupes:0});
+            }
+
+            if(times === 1) {
+                grid.style.display = 'none'; single.style.display = 'flex';
+                document.getElementById('card-img').style.backgroundImage = `url('${results[0].img}')`;
+                setTimeout(() => box.classList.add('is-flipped'), 100);
+            } else {
+                single.style.display = 'none'; grid.style.display = 'grid';
+                results.forEach(h => grid.innerHTML += `<div class="mini-card" style="background-image:url('${h.img}')"></div>`);
+            }
+            save();
+        }
+
+        function upgradeHero(id) {
+            let h = db.inv.find(x => x.id === id);
+            if(h.dupes >= 5) { h.dupes -= 5; h.lvl++; renderInv(); save(); alert(h.name + " LEVEL UP!"); } 
+            else { alert("Butuh 5 kartu duplikat!"); }
+        }
+
+        function renderInv() {
+            document.getElementById('inv-grid').innerHTML = db.inv.map(h => `
+                <div class="inv-card" style="background-image:url('${h.img}')">
+                    <div class="pwr-tag">PWR: ${h.pwr * h.lvl}</div>
+                    <div class="dup-badge">${h.dupes}/5</div>
+                    <button class="up-btn" onclick="upgradeHero(${h.id})">UPGRADE LV.${h.lvl}</button>
+                </div>
+            `).join('');
+        }
+
+        function renderSelect() {
+            document.getElementById('hero-select-list').innerHTML = db.inv.map(h => `
+                <div onclick="prep(${h.id}, this)" style="min-width:65px; height:90px; border:2px solid #444; background-image:url('${h.img}'); background-size:cover; border-radius:8px;"></div>
+            `).join('');
+        }
+
+        function prep(id, el) {
+            document.querySelectorAll('#hero-select-list div').forEach(d => d.style.borderColor = '#444');
+            el.style.borderColor = 'var(--gold)';
+            db.selected = db.inv.find(x => x.id === id);
+            document.getElementById('p-fighter').style.backgroundImage = `url('${db.selected.img}')`;
+            document.getElementById('p-info').innerText = `Lv.${db.selected.lvl} | PWR: ${db.selected.pwr * db.selected.lvl}`;
+            document.getElementById('btn-fight').disabled = false;
+        }
+
+        function startBattle() {
+            document.getElementById('btn-fight').disabled = true;
+            window.enemy = {...heroPool[Math.floor(Math.random()*heroPool.length)], lvl: Math.floor(Math.random()*5)+1};
+            document.getElementById('e-fighter').style.backgroundImage = `url('${window.enemy.img}')`;
+            document.getElementById('e-info').innerText = `Lv.${window.enemy.lvl} | PWR: ${window.enemy.pwr * window.enemy.lvl}`;
+
+            let php = 100, ehp = 100;
+            const loop = setInterval(() => {
+                let p_pwr = db.selected.pwr * db.selected.lvl;
+                let e_pwr = window.enemy.pwr * window.enemy.lvl;
+
+                if(db.selected.name === "Saitama God") {
+                    if(window.enemy.name === "Saitama God") {
+                        if(db.selected.lvl > window.enemy.lvl) ehp -= 50; else if(db.selected.lvl < window.enemy.lvl) php -= 50; else { php-=10; ehp-=10; }
+                    } else ehp = 0;
+                } else if(window.enemy.name === "Saitama God") php = 0;
+                else { ehp -= (p_pwr / 500); php -= (e_pwr / 500); }
+
+                document.getElementById('p-hp').style.width = Math.max(0, php) + "%";
+                document.getElementById('e-hp').style.width = Math.max(0, ehp) + "%";
+
+                if(ehp <= 0) { clearInterval(loop); alert("VICTORY!"); db.score += 500; save(); renderSelect(); }
+                else if(php <= 0) { clearInterval(loop); alert("DEFEAT!"); renderSelect(); }
+            }, 300);
+        }
+
+        save();
+    </script>
+</body>
+  </html>
